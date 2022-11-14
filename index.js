@@ -117,7 +117,7 @@ app.get("/messages", async (req, res) => {
 
     try {
         const messages = await db.collection("messages").find().toArray()
-        
+
         const filtered = messages.filter((m) => {
             if (m.type === "message" || m.type === "status" || m.to === user || m.from === user) {
                 return m
@@ -125,6 +125,24 @@ app.get("/messages", async (req, res) => {
         }).slice(-limit)
 
         res.send(filtered)
+    } catch (err) {
+        res.sendStatus(500)
+    }
+})
+
+app.post("/status", async (req, res) => {
+    const user = req.headers.user
+    const checkUser = await db.collection("participants").findOne({user})
+
+    if (!checkUser) {
+        res.sendStatus(404)
+        return
+    }
+
+    try {
+        await db.collection("participants").updateOne({user}, {$set: {lastStatus: Date.now()}})
+
+        res.sendStatus(200)
     } catch (err) {
         res.sendStatus(500)
     }

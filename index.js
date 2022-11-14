@@ -148,6 +148,36 @@ app.post("/status", async (req, res) => {
     }
 })
 
+async function removeInactive() {
+    const users = await db.collection("participants").find().toArray()
+
+    const inactive = users.filter((us) => {
+        if (Date.now() - us.lastStatus > 10000) {
+            return us
+        }
+    })
+
+    inactive.forEach( async (user) => {
+        try {
+            await db.collection("participants").deleteOne({name: user.name})
+
+            const statusMsg = {
+                from: user.name,
+                to: "Todos",
+                text: "sai da sala...",
+                type: "status",
+                time: dayjs(Date.now().format("HH:mm:ss"))
+            }
+
+            await db.collection("messages").insertOne(statusMsg)
+        } catch (err) {
+            console.log(err)
+        }
+    })
+}
+
+setInterval(removeInactive, 15000)
+
 app.listen(5000, () => {
     console.log("Server running in port 5000")
 })

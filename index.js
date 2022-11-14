@@ -111,6 +111,25 @@ app.post("/messages", async (req, res) => {
     }
 })
 
+app.get("/messages", async (req, res) => {
+    const limit = Number(req.query.limit)
+    const user = req.headers.user
+
+    try {
+        const messages = await db.collection("messages").find().toArray()
+        
+        const filtered = messages.filter((m) => {
+            if (m.type === "message" || m.type === "status" || m.to === user || m.from === user) {
+                return m
+            }
+        }).slice(-limit)
+
+        res.send(filtered)
+    } catch (err) {
+        res.sendStatus(500)
+    }
+})
+
 app.listen(5000, () => {
     console.log("Server running in port 5000")
 })

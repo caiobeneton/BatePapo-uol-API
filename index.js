@@ -78,6 +78,39 @@ app.get("/participants", async (req, res) => {
     }
 })
 
+app.post("/messages", async (req, res) => {
+    const {to, text, type} = req.body
+    const from = req.headers.user
+    const validation = messageSchema.validate(req.body, {abortEarly: false})
+
+    if (validation.error) {
+        res.sendStatus(422)
+        return
+    }
+
+    const message = {
+        from,
+        to,
+        text,
+        type,
+        time: dayjs(Date.now().format("HH:mm:ss"))
+    }
+
+    try {
+        const checkUser = await db.collection("participants").findOne({name: from})
+
+        if (!checkUser) {
+            res.sendStatus(422)
+            return
+        }
+
+        await db.collection("messages").insertOne(message)
+        res.sendStatus(201)
+    } catch (err) {
+        res.sendStatus(500)
+    }
+})
+
 app.listen(5000, () => {
     console.log("Server running in port 5000")
 })
